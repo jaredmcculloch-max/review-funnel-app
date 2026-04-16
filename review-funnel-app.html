@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ReviewPulse — Automated Review Funnel</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --bg2: #161617;
+    --bg3: #1e1e20;
+    --bg4: #26262a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0ede8;
+    --text2: #9a9791;
+    --text3: #5a5855;
+    --accent: #c8f55a;
+    --accent2: #a8d43a;
+    --accent-dim: rgba(200,245,90,0.12);
+    --accent-dim2: rgba(200,245,90,0.06);
+    --red: #ff6b6b;
+    --red-dim: rgba(255,107,107,0.12);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 0;
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+  }
+  .logo {
+    padding: 0 24px 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .logo-mark {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .logo-sub { font-size: 11px; color: var(--text3); letter-spacing: 0.05em; text-transform: uppercase; margin-top: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 24px;
+    font-size: 14px; font-weight: 400;
+    color: var(--text2);
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--text); background: var(--accent-dim2); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim2); font-weight: 500; }
+  .nav-icon { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-section {
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text3); padding: 16px 24px 6px; font-weight: 500;
+  }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+  .status-dot {
+    display: inline-block; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    margin-right: 6px;
+  }
+  .status-dot.off { background: var(--text3); box-shadow: none; }
+  .status-label { font-size: 12px; color: var(--text2); }
+
+  /* MAIN */
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    padding: 40px 48px;
+    max-width: 1100px;
+  }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* PAGE HEADER */
+  .page-header { margin-bottom: 36px; }
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px; font-weight: 400;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .page-subtitle { font-size: 14px; color: var(--text2); margin-top: 6px; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+
+  /* STAT GRID */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+  }
+  .stat-label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+  .stat-value { font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--text); letter-spacing: -1px; }
+  .stat-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .stat-accent { color: var(--accent); }
+  .stat-red { color: var(--red); }
+
+  /* TOGGLE */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .toggle-row:first-child { padding-top: 0; }
+  .toggle-label { font-size: 14px; color: var(--text); font-weight: 400; }
+  .toggle-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .toggle {
+    position: relative; width: 40px; height: 22px; flex-shrink: 0;
+    cursor: pointer;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--bg4);
+    border-radius: 11px;
+    border: 1px solid var(--border2);
+    transition: background 0.2s;
+  }
+  .toggle input:checked ~ .toggle-track { background: var(--accent); border-color: var(--accent); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: var(--text3);
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); background: var(--bg); }
+
+  /* FORM ELEMENTS */
+  .form-group { margin-bottom: 20px; }
+  .form-label { font-size: 13px; color: var(--text2); margin-bottom: 8px; display: block; font-weight: 400; }
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--accent); }
+  .form-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  .form-select option { background: var(--bg3); }
+  .form-hint { font-size: 12px; color: var(--text3); margin-top: 6px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .tag { display: inline-block; background: var(--accent-dim); color: var(--accent); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; cursor: pointer; border: 1px solid rgba(200,245,90,0.2); margin-right: 4px; margin-bottom: 4px; }
+  .tag:hover { background: var(--accent-dim2); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: var(--radius-sm);
+    font-size: 14px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border2); background: var(--bg3); }
+  .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,107,107,0.2); }
+  .btn-danger:hover { background: rgba(255,107,107,0.2); }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 11px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--text3);
+    padding: 0 16px 12px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg3); }
+  tbody td { padding: 14px 16px; font-size: 14px; color: var(--text2); }
+  tbody td:first-child { color: var(--text); font-weight: 400; }
+
+  /* BADGE */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  }
+  .badge-green { background: var(--accent-dim); color: var(--accent); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); }
+  .badge-gray { background: var(--bg4); color: var(--text2); }
+
+  /* SCORE STARS */
+  .score-display { display: flex; gap: 3px; }
+  .star { font-size: 13px; }
+  .star.on { color: var(--amber); }
+  .star.off { color: var(--bg4); }
+
+  /* GRID LAYOUTS */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* SECTION DIVIDER */
+  .section-gap { margin-bottom: 24px; }
+
+  /* WEBHOOK PANEL */
+  .webhook-url {
+    font-family: monospace; font-size: 12px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    color: var(--accent); word-break: break-all;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .webhook-url span { flex: 1; }
+  .copy-btn { font-size: 12px; color: var(--text3); cursor: pointer; white-space: nowrap; padding: 4px 8px; background: var(--bg4); border-radius: 4px; border: none; font-family: 'DM Sans', sans-serif; }
+  .copy-btn:hover { color: var(--text); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 12px 18px;
+    font-size: 14px; color: var(--text);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 1000;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  /* ACTIVITY FEED */
+  .feed-item {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0; margin-top: 2px;
+  }
+  .feed-icon.sent { background: var(--blue-dim); }
+  .feed-icon.replied { background: var(--accent-dim); }
+  .feed-icon.review { background: var(--amber-dim); }
+  .feed-icon.feedback { background: var(--red-dim); }
+  .feed-name { font-size: 14px; color: var(--text); font-weight: 500; }
+  .feed-detail { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .feed-time { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
+  /* CHART BAR */
+  .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 100px; padding-top: 12px; }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.4s ease; background: var(--bg4); position: relative; }
+  .bar.score-1 { background: var(--red); }
+  .bar.score-2 { background: #ff9b5a; }
+  .bar.score-3 { background: var(--amber); }
+  .bar.score-4 { background: #84d96c; }
+  .bar.score-5 { background: var(--accent); }
+  .bar-label { font-size: 11px; color: var(--text3); }
+  .bar-count { font-size: 12px; font-weight: 500; color: var(--text2); }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+
+  /* STEP INDICATOR */
+  .setup-steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: flex; gap: 16px; padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--bg4); border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: var(--text3);
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .step-num.done { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .step-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .step-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">ReviewPulse</div>
+    <div class="logo-sub">Review Automation</div>
+  </div>
+
+  <div class="nav-section">Overview</div>
+  <div class="nav-item active" onclick="showPage('dashboard', this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/>
+      <rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/>
+    </svg>
+    Dashboard
+  </div>
+  <div class="nav-item" onclick="showPage('customers', this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6"/>
+    </svg>
+    Customers
+  </div>
+
+  <div class="nav-section">Configure</div>
+  <div class="nav-item" onclick="showPage('messages', this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M2 3h12a1 1 0 011 1v7a1 1 0 01-1 1H5l-3 2V4a1 1 0 011-1z"/>
+    </svg>
+    Messages
+  </div>
+  <div class="nav-item" onclick="showPage('settings', this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="8" cy="8" r="2.5"/>
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
+    </svg>
+    Settings
+  </div>
+  <div class="nav-item" onclick="showPage('setup', this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M8 1L10 6H15L11 9.5L12.5 15L8 12L3.5 15L5 9.5L1 6H6Z"/>
+    </svg>
+    Setup Guide
+  </div>
+
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;">
+      <span class="status-dot" id="status-dot"></span>
+      <span class="status-label" id="status-label">System active</span>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div class="page-title">Dashboard</div>
+      <div class="page-subtitle">Your review automation at a glance</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Texts Sent</div>
+        <div class="stat-value" id="stat-sent">47</div>
+        <div class="stat-sub">Last 30 days</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Response Rate</div>
+        <div class="stat-value stat-accent" id="stat-rate">68%</div>
+        <div class="stat-sub">32 replied</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">5-Star Scores</div>
+        <div class="stat-value stat-accent" id="stat-five">19</div>
+        <div class="stat-sub">Sent to Google review</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Score</div>
+        <div class="stat-value" id="stat-avg">4.2</div>
+        <div class="stat-sub">Out of 5</div>
+      </div>
+    </div>
+
+    <div class="two-col section-gap">
+      <div class="card">
+        <div class="card-title">Score Breakdown</div>
+        <div class="bar-chart">
+          <div class="bar-wrap">
+            <div class="bar-count">2</div>
+            <div class="bar score-1" style="height:20px"></div>
+            <div class="bar-label">1</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-count">3</div>
+            <div class="bar score-2" style="height:30px"></div>
+            <div class="bar-label">2</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-count">4</div>
+            <div class="bar score-3" style="height:40px"></div>
+            <div class="bar-label">3</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-count">4</div>
+            <div class="bar score-4" style="height:40px"></div>
+            <div class="bar-label">4</div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-count">19</div>
+            <div class="bar score-5" style="height:100px"></div>
+            <div class="bar-label">5</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Recent Activity</div>
+        <div id="activity-feed">
+          <div class="feed-item">
+            <div class="feed-icon review">⭐</div>
+            <div>
+              <div class="feed-name">Maria T.</div>
+              <div class="feed-detail">Replied 5 · Review link sent</div>
+              <div class="feed-time">2 hours ago</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-icon sent">💬</div>
+            <div>
+              <div class="feed-name">James K.</div>
+              <div class="feed-detail">Survey text delivered</div>
+              <div class="feed-time">3 hours ago</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-icon feedback">📝</div>
+            <div>
+              <div class="feed-name">Sandra M.</div>
+              <div class="feed-detail">Replied 3 · Feedback requested</div>
+              <div class="feed-time">5 hours ago</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-icon review">⭐</div>
+            <div>
+              <div class="feed-name">Derek W.</div>
+              <div class="feed-detail">Replied 5 · Review link sent</div>
+              <div class="feed-time">Yesterday</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test SMS Panel -->
+    <div class="card">
+      <div class="card-title">Test Your Setup</div>
+      <p style="font-size:14px;color:var(--text2);margin-bottom:16px;">Send a test text to your own number to make sure everything works before going live.</p>
+      <div style="display:flex;gap:12px;align-items:flex-end;">
+        <div style="flex:1;">
+          <div class="form-label">Your phone number</div>
+          <input class="form-input" id="test-phone" type="tel" placeholder="+1 (555) 000-0000" style="max-width:280px;"/>
+        </div>
+        <button class="btn btn-primary" onclick="sendTestSMS()">Send Test Text</button>
+      </div>
+      <div id="test-result" style="margin-top:12px;font-size:13px;color:var(--text2);display:none;"></div>
+    </div>
+  </div>
+
+  <!-- CUSTOMERS PAGE -->
+  <div class="page" id="page-customers">
+    <div class="page-header">
+      <div class="page-title">Customers</div>
+      <div class="page-subtitle">Everyone who has been through the funnel</div>
+    </div>
+    <div class="card">
+      <div class="section-header">
+        <div class="card-title" style="margin-bottom:0;">All contacts</div>
+        <input class="form-input" id="search-input" placeholder="Search name or phone..." style="width:220px;" oninput="filterCustomers(this.value)"/>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Payment Date</th>
+              <th>Text Sent</th>
+              <th>Score</th>
+              <th>Outcome</th>
+            </tr>
+          </thead>
+          <tbody id="customer-tbody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MESSAGES PAGE -->
+  <div class="page" id="page-messages">
+    <div class="page-header">
+      <div class="page-title">Message Templates</div>
+      <div class="page-subtitle">Customize the texts your customers receive</div>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Initial survey text</div>
+      <div class="form-group">
+        <label class="form-label">Message sent 1 hour after payment</label>
+        <textarea class="form-textarea" id="msg-initial" style="min-height:80px;">Hi {name}! Thanks for choosing {business}. How was your experience today? Reply with a number from 1–5 (1 = needs improvement, 5 = amazing). We appreciate your feedback!</textarea>
+        <div class="form-hint">
+          Variables: <span class="tag" onclick="insertVar('msg-initial','{name}')">{name}</span><span class="tag" onclick="insertVar('msg-initial','{business}')">{business}</span><span class="tag" onclick="insertVar('msg-initial','{amount}')">{amount}</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveMsg('initial')">Save message</button>
+    </div>
+
+    <div class="two-col section-gap">
+      <div class="card">
+        <div class="card-title">5-star response 🌟</div>
+        <div class="form-group">
+          <label class="form-label">Sent when customer replies 5</label>
+          <textarea class="form-textarea" id="msg-five">We're so glad you had an amazing experience, {name}! Would you mind sharing it on Google? It really helps us grow. Leave a review here: {google_link}</textarea>
+          <div class="form-hint">Variables: <span class="tag" onclick="insertVar('msg-five','{name}')">{name}</span><span class="tag" onclick="insertVar('msg-five','{google_link}')">{google_link}</span></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveMsg('five')">Save message</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">1–4 response 💬</div>
+        <div class="form-group">
+          <label class="form-label">Sent when customer replies 1–4</label>
+          <textarea class="form-textarea" id="msg-low">We're sorry to hear that, {name}. Your experience matters to us — what could we have done better? Just reply to this message and we'll make it right.</textarea>
+          <div class="form-hint">Variables: <span class="tag" onclick="insertVar('msg-low','{name}')">{name}</span></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveMsg('low')">Save message</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Preview</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Initial text</div>
+          <div style="background:var(--bg3);border-radius:12px;border-radius:4px 12px 12px 12px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;" id="preview-initial"></div>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">If they reply 5</div>
+          <div style="background:var(--accent-dim);border-radius:4px 12px 12px 12px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;" id="preview-five"></div>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">If they reply 1–4</div>
+          <div style="background:var(--red-dim);border-radius:4px 12px 12px 12px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;" id="preview-low"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="page-header">
+      <div class="page-title">Settings</div>
+      <div class="page-subtitle">Connect your accounts and configure behavior</div>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Business info</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Business name</label>
+          <input class="form-input" id="business-name" placeholder="e.g. Clean Cuts Barbershop"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Google Review link</label>
+          <input class="form-input" id="google-link" placeholder="https://g.page/r/..."/>
+          <div class="form-hint">Find this in your Google Business Profile → "Get more reviews"</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveBusiness()">Save</button>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Twilio — SMS credentials</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Account SID</label>
+          <input class="form-input" id="twilio-sid" type="password" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Auth Token</label>
+          <input class="form-input" id="twilio-token" type="password" placeholder="Your auth token"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Twilio phone number</label>
+        <input class="form-input" id="twilio-phone" placeholder="+15550001234" style="max-width:220px;"/>
+        <div class="form-hint">The number your customers will receive texts from. Get this from twilio.com → Phone Numbers.</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveTwilio()">Save Twilio settings</button>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Stripe — Webhook</div>
+      <p style="font-size:14px;color:var(--text2);margin-bottom:14px;">Paste this URL into your Stripe Dashboard under Developers → Webhooks → Add endpoint. Select the <code style="font-size:12px;background:var(--bg3);padding:2px 6px;border-radius:4px;">payment_intent.succeeded</code> event.</p>
+      <div class="webhook-url">
+        <span id="webhook-url-display">https://your-hosting-url.com/webhook/stripe</span>
+        <button class="copy-btn" onclick="copyWebhook()">Copy</button>
+      </div>
+      <div style="margin-top:16px;" class="form-row">
+        <div class="form-group">
+          <label class="form-label">Stripe Secret Key</label>
+          <input class="form-input" id="stripe-key" type="password" placeholder="sk_live_..."/>
+          <div class="form-hint">Found in Stripe Dashboard → Developers → API keys</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stripe Webhook Secret</label>
+          <input class="form-input" id="stripe-webhook-secret" type="password" placeholder="whsec_..."/>
+          <div class="form-hint">Generated when you create the webhook endpoint in Stripe</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveStripe()">Save Stripe settings</button>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Behavior</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Automation active</div>
+          <div class="toggle-desc">Turn this off to pause all outgoing texts</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-active" checked onchange="updateStatus()"/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Delay text by 1 hour after payment</div>
+          <div class="toggle-desc">Gives the customer time to get home before receiving the survey</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-delay" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Only text once per customer per 30 days</div>
+          <div class="toggle-desc">Prevents repeat customers from getting multiple surveys</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-dedupe" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Quiet hours (9pm – 9am)</div>
+          <div class="toggle-desc">Delays texts that would go out at night until 9am</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-quiet" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP GUIDE PAGE -->
+  <div class="page" id="page-setup">
+    <div class="page-header">
+      <div class="page-title">Setup Guide</div>
+      <div class="page-subtitle">Follow these steps to go live — takes about 45 minutes total</div>
+    </div>
+
+    <div class="card">
+      <div class="setup-steps">
+        <div class="step">
+          <div class="step-num done">✓</div>
+          <div>
+            <div class="step-title">1. Get your Google Review link</div>
+            <div class="step-desc">Search your business name on Google. On the right side panel, click <strong>"Get more reviews."</strong> Copy that link. Then paste it into Settings → Business Info → Google Review link.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" id="step2-num">2</div>
+          <div>
+            <div class="step-title">2. Create a Twilio account</div>
+            <div class="step-desc">Go to <strong>twilio.com</strong> and sign up for a free account. Once in, go to Phone Numbers → Buy a number (about $1/month). Then go to Account → API Keys and copy your <strong>Account SID</strong> and <strong>Auth Token</strong>. Paste both into Settings → Twilio. You'll also need to complete Twilio's A2P registration (free, takes 1–3 days) to send texts in the US.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" id="step3-num">3</div>
+          <div>
+            <div class="step-title">3. Connect to Stripe</div>
+            <div class="step-desc">Log into <strong>stripe.com</strong> → Developers → Webhooks → Add endpoint. Paste in the webhook URL from Settings → Stripe section. Select the event <code style="font-size:12px;background:var(--bg3);padding:2px 5px;border-radius:4px;">payment_intent.succeeded</code>. Copy the Webhook Signing Secret and your Secret Key into Settings → Stripe.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" id="step4-num">4</div>
+          <div>
+            <div class="step-title">4. Host this app</div>
+            <div class="step-desc">This app needs to live on a server so Stripe can send it data. The easiest free option is <strong>Railway.app</strong> or <strong>Render.com</strong>. Create a free account on either, upload this file, and they give you a public URL. Copy that URL and update the webhook URL in Settings → Stripe, then re-add it in Stripe's dashboard. If this feels intimidating, ask a local tech-savvy person or post on Fiverr — deploying this file takes about 10 minutes for someone who knows how.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" id="step5-num">5</div>
+          <div>
+            <div class="step-title">5. Send a test text</div>
+            <div class="step-desc">Once all credentials are saved, go to the <strong>Dashboard</strong> and use the "Test Your Setup" panel to send a text to your own phone number. Confirm it arrives and that replies trigger the correct follow-up. You're live!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-dot"></div>
+  <span id="toast-msg">Saved</span>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+const state = {
+  active: true,
+  business: { name: '', googleLink: '' },
+  twilio: { sid: '', token: '', phone: '' },
+  stripe: { key: '', webhookSecret: '' },
+  messages: {
+    initial: document.getElementById('msg-initial')?.value || '',
+    five: document.getElementById('msg-five')?.value || '',
+    low: document.getElementById('msg-low')?.value || ''
+  },
+  customers: [
+    { name: 'Maria T.', phone: '+15550001', date: '2025-01-14', sent: true, score: 5, outcome: 'review_sent' },
+    { name: 'James K.', phone: '+15550002', date: '2025-01-14', sent: true, score: null, outcome: 'awaiting' },
+    { name: 'Sandra M.', phone: '+15550003', date: '2025-01-14', sent: true, score: 3, outcome: 'feedback_requested' },
+    { name: 'Derek W.', phone: '+15550004', date: '2025-01-13', sent: true, score: 5, outcome: 'review_sent' },
+    { name: 'Pat L.', phone: '+15550005', date: '2025-01-13', sent: true, score: 4, outcome: 'feedback_requested' },
+    { name: 'Renee B.', phone: '+15550006', date: '2025-01-12', sent: true, score: 5, outcome: 'review_sent' },
+    { name: 'Carlos F.', phone: '+15550007', date: '2025-01-12', sent: true, score: 1, outcome: 'feedback_requested' },
+    { name: 'Anita S.', phone: '+15550008', date: '2025-01-11', sent: true, score: 5, outcome: 'review_sent' },
+  ]
+};
+
+// ─── NAVIGATION ─────────────────────────────────────────
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'messages') updatePreviews();
+  if (id === 'customers') renderCustomers(state.customers);
+}
+
+// ─── TOAST ───────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── SAVE FUNCTIONS ──────────────────────────────────────
+function saveBusiness() {
+  state.business.name = document.getElementById('business-name').value;
+  state.business.googleLink = document.getElementById('google-link').value;
+  localStorage.setItem('rp_business', JSON.stringify(state.business));
+  toast('Business info saved ✓');
+  updatePreviews();
+}
+
+function saveTwilio() {
+  state.twilio.sid = document.getElementById('twilio-sid').value;
+  state.twilio.token = document.getElementById('twilio-token').value;
+  state.twilio.phone = document.getElementById('twilio-phone').value;
+  localStorage.setItem('rp_twilio', JSON.stringify(state.twilio));
+  toast('Twilio settings saved ✓');
+}
+
+function saveStripe() {
+  state.stripe.key = document.getElementById('stripe-key').value;
+  state.stripe.webhookSecret = document.getElementById('stripe-webhook-secret').value;
+  localStorage.setItem('rp_stripe', JSON.stringify(state.stripe));
+  toast('Stripe settings saved ✓');
+}
+
+function saveMsg(type) {
+  const map = { initial: 'msg-initial', five: 'msg-five', low: 'msg-low' };
+  state.messages[type] = document.getElementById(map[type]).value;
+  localStorage.setItem('rp_messages', JSON.stringify(state.messages));
+  toast('Message saved ✓');
+  updatePreviews();
+}
+
+// ─── LOAD FROM LOCALSTORAGE ──────────────────────────────
+function loadSaved() {
+  const b = localStorage.getItem('rp_business');
+  const tw = localStorage.getItem('rp_twilio');
+  const st = localStorage.getItem('rp_stripe');
+  const ms = localStorage.getItem('rp_messages');
+
+  if (b) {
+    const d = JSON.parse(b);
+    document.getElementById('business-name').value = d.name || '';
+    document.getElementById('google-link').value = d.googleLink || '';
+    Object.assign(state.business, d);
+  }
+  if (tw) {
+    const d = JSON.parse(tw);
+    document.getElementById('twilio-sid').value = d.sid || '';
+    document.getElementById('twilio-token').value = d.token || '';
+    document.getElementById('twilio-phone').value = d.phone || '';
+    Object.assign(state.twilio, d);
+  }
+  if (st) {
+    const d = JSON.parse(st);
+    document.getElementById('stripe-key').value = d.key || '';
+    document.getElementById('stripe-webhook-secret').value = d.webhookSecret || '';
+    Object.assign(state.stripe, d);
+  }
+  if (ms) {
+    const d = JSON.parse(ms);
+    if (d.initial) document.getElementById('msg-initial').value = d.initial;
+    if (d.five) document.getElementById('msg-five').value = d.five;
+    if (d.low) document.getElementById('msg-low').value = d.low;
+    Object.assign(state.messages, d);
+  }
+}
+
+// ─── MESSAGE PREVIEWS ────────────────────────────────────
+function updatePreviews() {
+  const name = state.business.name || 'Your Business';
+  const link = state.business.googleLink || 'https://g.page/r/your-link';
+  const fill = (t) => t
+    .replace(/{name}/g, 'John')
+    .replace(/{business}/g, name)
+    .replace(/{amount}/g, '$85.00')
+    .replace(/{google_link}/g, link);
+
+  const pi = document.getElementById('preview-initial');
+  const pf = document.getElementById('preview-five');
+  const pl = document.getElementById('preview-low');
+  if (pi) pi.textContent = fill(document.getElementById('msg-initial').value);
+  if (pf) pf.textContent = fill(document.getElementById('msg-five').value);
+  if (pl) pl.textContent = fill(document.getElementById('msg-low').value);
+}
+
+// ─── INSERT VARIABLE INTO TEXTAREA ───────────────────────
+function insertVar(id, variable) {
+  const el = document.getElementById(id);
+  const start = el.selectionStart, end = el.selectionEnd;
+  el.value = el.value.substring(0, start) + variable + el.value.substring(end);
+  el.selectionStart = el.selectionEnd = start + variable.length;
+  el.focus();
+  updatePreviews();
+}
+
+// ─── CUSTOMER TABLE ──────────────────────────────────────
+function stars(score) {
+  if (!score) return '<span style="color:var(--text3);font-size:12px;">—</span>';
+  let s = '';
+  for (let i = 1; i <= 5; i++) {
+    s += `<span class="star ${i <= score ? 'on' : 'off'}">★</span>`;
+  }
+  return `<div class="score-display">${s}</div>`;
+}
+
+function outcomeBadge(outcome) {
+  const map = {
+    review_sent: '<span class="badge badge-green">Google review sent</span>',
+    feedback_requested: '<span class="badge badge-amber">Feedback requested</span>',
+    awaiting: '<span class="badge badge-gray">Awaiting reply</span>',
+    pending: '<span class="badge badge-blue">Text pending</span>',
+  };
+  return map[outcome] || '<span class="badge badge-gray">Unknown</span>';
+}
+
+function renderCustomers(list) {
+  const tbody = document.getElementById('customer-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = list.map(c => `
+    <tr>
+      <td>${c.name}</td>
+      <td style="font-family:monospace;font-size:13px;">${c.phone}</td>
+      <td>${c.date}</td>
+      <td>${c.sent ? '<span class="badge badge-blue">✓ Sent</span>' : '<span class="badge badge-gray">Not sent</span>'}</td>
+      <td>${stars(c.score)}</td>
+      <td>${outcomeBadge(c.outcome)}</td>
+    </tr>
+  `).join('');
+}
+
+function filterCustomers(q) {
+  const filtered = state.customers.filter(c =>
+    c.name.toLowerCase().includes(q.toLowerCase()) || c.phone.includes(q)
+  );
+  renderCustomers(filtered);
+}
+
+// ─── STATUS TOGGLE ───────────────────────────────────────
+function updateStatus() {
+  const on = document.getElementById('toggle-active').checked;
+  state.active = on;
+  const dot = document.getElementById('status-dot');
+  const label = document.getElementById('status-label');
+  dot.className = 'status-dot' + (on ? '' : ' off');
+  label.textContent = on ? 'System active' : 'System paused';
+}
+
+// ─── COPY WEBHOOK ────────────────────────────────────────
+function copyWebhook() {
+  const url = document.getElementById('webhook-url-display').textContent;
+  navigator.clipboard.writeText(url).then(() => toast('Webhook URL copied ✓'));
+}
+
+// ─── SEND TEST SMS ───────────────────────────────────────
+async function sendTestSMS() {
+  const phone = document.getElementById('test-phone').value.trim();
+  const result = document.getElementById('test-result');
+
+  if (!phone) { toast('Enter a phone number first'); return; }
+  if (!state.twilio.sid || !state.twilio.token || !state.twilio.phone) {
+    result.style.display = 'block';
+    result.innerHTML = '<span style="color:var(--amber)">⚠ Please save your Twilio credentials in Settings first.</span>';
+    return;
+  }
+
+  const biz = state.business.name || 'your business';
+  const msg = state.messages.initial
+    .replace(/{name}/g, 'Test Customer')
+    .replace(/{business}/g, biz)
+    .replace(/{amount}/g, '$0.00')
+    .replace(/{google_link}/g, state.business.googleLink || '');
+
+  result.style.display = 'block';
+  result.innerHTML = '<span style="color:var(--text2)">Sending...</span>';
+
+  try {
+    const creds = btoa(`${state.twilio.sid}:${state.twilio.token}`);
+    const body = new URLSearchParams({
+      To: phone,
+      From: state.twilio.phone,
+      Body: msg
+    });
+
+    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${state.twilio.sid}/Messages.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${creds}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: body.toString()
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      result.innerHTML = `<span style="color:var(--accent)">✓ Test text sent to ${phone}! Check your phone.</span>`;
+      toast('Test SMS sent ✓');
+    } else {
+      result.innerHTML = `<span style="color:var(--red)">Error: ${data.message || 'Failed to send. Check your Twilio credentials.'}</span>`;
+    }
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">Connection error. Make sure your Twilio credentials are correct.</span>`;
+  }
+}
+
+// ─── STRIPE WEBHOOK HANDLER (server-side logic reference) ─
+// NOTE: This function shows the logic. When hosted on a server,
+// your server receives POST /webhook/stripe from Stripe,
+// then calls handleStripePayment() with the parsed event data.
+async function handleStripePayment(paymentIntent) {
+  const customerPhone = paymentIntent.metadata?.phone;
+  const customerName = paymentIntent.metadata?.customer_name || 'Valued Customer';
+  const amount = (paymentIntent.amount / 100).toFixed(2);
+
+  if (!customerPhone) return { error: 'No phone number in payment metadata' };
+
+  const delayMs = document.getElementById('toggle-delay')?.checked ? 60 * 60 * 1000 : 0;
+
+  setTimeout(async () => {
+    const msg = (state.messages.initial || '')
+      .replace(/{name}/g, customerName)
+      .replace(/{business}/g, state.business.name || 'us')
+      .replace(/{amount}/g, `$${amount}`);
+
+    await sendSMS(customerPhone, msg);
+
+    // Log to customers
+    const newCustomer = {
+      name: customerName,
+      phone: customerPhone,
+      date: new Date().toISOString().split('T')[0],
+      sent: true,
+      score: null,
+      outcome: 'awaiting'
+    };
+    state.customers.unshift(newCustomer);
+
+  }, delayMs);
+
+  return { success: true };
+}
+
+// ─── HANDLE INCOMING SMS REPLY ───────────────────────────
+// When Twilio receives a reply, it calls POST /webhook/twilio
+// with the From number and Body. This function handles it.
+async function handleSMSReply(fromPhone, body) {
+  const score = parseInt(body.trim());
+  if (isNaN(score) || score < 1 || score > 5) {
+    await sendSMS(fromPhone, "Thanks for reaching out! To rate your experience, please reply with a number from 1 to 5.");
+    return;
+  }
+
+  // Update customer record
+  const customer = state.customers.find(c => c.phone === fromPhone);
+  if (customer) {
+    customer.score = score;
+    customer.outcome = score === 5 ? 'review_sent' : 'feedback_requested';
+  }
+
+  if (score === 5) {
+    const msg = (state.messages.five || '')
+      .replace(/{name}/g, customer?.name || 'there')
+      .replace(/{google_link}/g, state.business.googleLink || '');
+    await sendSMS(fromPhone, msg);
+  } else {
+    const msg = (state.messages.low || '')
+      .replace(/{name}/g, customer?.name || 'there');
+    await sendSMS(fromPhone, msg);
+  }
+}
+
+// ─── SEND SMS VIA TWILIO ─────────────────────────────────
+async function sendSMS(to, body) {
+  if (!state.twilio.sid || !state.twilio.token) return { error: 'No Twilio credentials' };
+  const creds = btoa(`${state.twilio.sid}:${state.twilio.token}`);
+  const params = new URLSearchParams({ To: to, From: state.twilio.phone, Body: body });
+  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${state.twilio.sid}/Messages.json`, {
+    method: 'POST',
+    headers: { 'Authorization': `Basic ${creds}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  });
+  return res.json();
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+loadSaved();
+updatePreviews();
+renderCustomers(state.customers);
+</script>
+</body>
+</html>
